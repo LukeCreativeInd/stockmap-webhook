@@ -3,7 +3,9 @@ import { Octokit } from "octokit";
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end("Only POST supported");
 
-  const { customer } = req.body;
+  const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+  const { customer } = body;
+
 
   if (!customer?.id) return res.status(400).send("Missing customer ID");
 
