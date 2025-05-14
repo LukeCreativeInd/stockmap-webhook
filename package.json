@@ -1,0 +1,8 @@
+{
+  "name": "stockmap-webhook",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "octokit": "^3.0.0"
+  }
+}
