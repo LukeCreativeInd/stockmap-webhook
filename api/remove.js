@@ -1,38 +1,37 @@
-
-// api/remove.js
 import { Octokit } from "octokit";
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).end("Only POST supported");
-
-  const { customer } = req.body;
-
-  if (!customer?.id) return res.status(400).send("Missing customer ID");
-
-  const shopifyRes = await fetch(
-    `https://${process.env.SHOPIFY_STORE_DOMAIN}/admin/api/2023-10/customers/${customer.id}.json`,
-    {
-      headers: {
-        "X-Shopify-Access-Token": process.env.SHOPIFY_API_TOKEN,
-        "Content-Type": "application/json",
-      },
-    }
-  );
-
-  if (!shopifyRes.ok) {
-    return res.status(500).send("Failed to fetch customer from Shopify");
-  }
-
-  const { customer: c } = await shopifyRes.json();
-
-  const fullName = `${c.first_name} ${c.last_name}`.toLowerCase();
-  const address = (c.default_address?.address1 || "").toLowerCase();
-
-  const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
-  const [owner, repo] = process.env.CSV_REPO.split("/");
-  const path = process.env.CSV_PATH;
-
   try {
+    if (req.method !== "POST") return res.status(405).end("Only POST supported");
+
+    const { customer } = req.body;
+    if (!customer?.id) return res.status(400).send("Missing customer ID");
+
+    const shopifyRes = await fetch(
+      `https://${process.env.SHOPIFY_STORE_DOMAIN}/admin/api/2023-10/customers/${customer.id}.json`,
+      {
+        headers: {
+          "X-Shopify-Access-Token": process.env.SHOPIFY_API_TOKEN,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (!shopifyRes.ok) {
+      const text = await shopifyRes.text();
+      console.error("💥 Shopify fetch failed:", text);
+      return res.status(500).send("Shopify fetch failed");
+    }
+
+    const { customer: c } = await shopifyRes.json();
+
+    const fullName = `${c.first_name} ${c.last_name}`.toLowerCase();
+    const address = (c.default_address?.address1 || "").toLowerCase();
+
+    const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
+    const [owner, repo] = process.env.CSV_REPO.split("/");
+    const path = process.env.CSV_PATH;
+
     const { data: fileData } = await octokit.repos.getContent({
       owner,
       repo,
@@ -65,7 +64,7 @@ export default async function handler(req, res) {
 
     return res.status(200).send("Customer removed from CSV");
   } catch (error) {
-    console.error("💥 REMOVE ERROR:", error.message || error);
-    return res.status(500).send("GitHub update failed");
+    console.error("💥 Top-level crash in remove.js:", error.message || error);
+    return res.status(500).send("Top-level crash occurred");
   }
 }
