@@ -65,7 +65,7 @@ export default async function handler(req, res) {
 
     return res.status(200).send("Customer removed from CSV");
   } catch (error) {
-    console.error("GitHub CSV update error:", error);
+    console.error("💥 REMOVE ERROR:", error.message || error);
     return res.status(500).send("GitHub update failed");
   }
 }
