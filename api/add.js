@@ -1,28 +1,14 @@
 // api/add.js
 import { Octokit } from "octokit";
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
-
 export default async function handler(req, res) {
   try {
     if (req.method !== "POST") return res.status(405).end("Only POST supported");
 
-    const rawBody = await new Promise((resolve, reject) => {
-      let data = "";
-      req.on("data", chunk => (data += chunk));
-      req.on("end", () => resolve(data));
-      req.on("error", err => reject(err));
-    });
-
-    const parsed = JSON.parse(rawBody);
-    const { customer } = parsed;
+    const { customer } = req.body;
 
     if (!customer?.id) {
-      console.error("🚨 Missing customer ID in parsed body:", parsed);
+      console.error("🚨 Missing customer ID in req.body:", req.body);
       return res.status(400).send("Missing customer ID");
     }
 
